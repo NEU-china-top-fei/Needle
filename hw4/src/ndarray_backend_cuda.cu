@@ -591,16 +591,7 @@ PYBIND11_MODULE(ndarray_backend_cuda, m) {
   REGISTERSIN("ewise_log", LOG());
   REGISTERSIN("ewise_exp", EXP());
   REGISTERSIN("ewise_tanh", TANH());
-  // m.def("ewise_maximum", EwiseMaximum);
-  // m.def("scalar_maximum", ScalarMaximum);
-  // m.def("ewise_eq", EwiseEq);
-  // m.def("scalar_eq", ScalarEq);
-  // m.def("ewise_ge", EwiseGe);
-  // m.def("scalar_ge", ScalarGe);
 
-  // m.def("ewise_log", EwiseLog);
-  // m.def("ewise_exp", EwiseExp);
-  // m.def("ewise_tanh", EwiseTanh);
 
   m.def("matmul", Matmul);
 

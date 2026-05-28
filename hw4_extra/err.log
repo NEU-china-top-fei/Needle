@@ -1,0 +1,159 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0 -- /home/kuris/work/Dlsys/env/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/kuris/work/Dlsys/hw4_extra
+[1mcollecting ... [0mcollected 112 items / 80 deselected / 32 selected
+
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.0-False-32-8-2-64-27-5-8] [32mPASSED[0m[32m [  3%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.0-False-32-8-2-64-27-11-8] [32mPASSED[0m[32m [  6%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.0-False-32-8-4-64-27-5-8] [32mPASSED[0m[32m [  9%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.0-False-32-8-4-64-27-11-8] [32mPASSED[0m[32m [ 12%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.0-True-32-8-2-64-27-5-8] [32mPASSED[0m[32m [ 15%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.0-True-32-8-2-64-27-11-8] [32mPASSED[0m[32m [ 18%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.0-True-32-8-4-64-27-5-8] [32mPASSED[0m[32m [ 21%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.0-True-32-8-4-64-27-11-8] [32mPASSED[0m[32m [ 25%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.1-False-32-8-2-64-27-5-8] [32mPASSED[0m[32m [ 28%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.1-False-32-8-2-64-27-11-8] [32mPASSED[0m[32m [ 31%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.1-False-32-8-4-64-27-5-8] [31mFAILED[0m[31m [ 34%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.1-False-32-8-4-64-27-11-8] [32mPASSED[0m[31m [ 37%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.1-True-32-8-2-64-27-5-8] [32mPASSED[0m[31m [ 40%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.1-True-32-8-2-64-27-11-8] [32mPASSED[0m[31m [ 43%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.1-True-32-8-4-64-27-5-8] [32mPASSED[0m[31m [ 46%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cpu-0.1-True-32-8-4-64-27-11-8] [32mPASSED[0m[31m [ 50%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.0-False-32-8-2-64-27-5-8] [32mPASSED[0m[31m [ 53%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.0-False-32-8-2-64-27-11-8] [32mPASSED[0m[31m [ 56%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.0-False-32-8-4-64-27-5-8] [32mPASSED[0m[31m [ 59%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.0-False-32-8-4-64-27-11-8] [32mPASSED[0m[31m [ 62%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.0-True-32-8-2-64-27-5-8] [32mPASSED[0m[31m [ 65%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.0-True-32-8-2-64-27-11-8] [32mPASSED[0m[31m [ 68%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.0-True-32-8-4-64-27-5-8] [32mPASSED[0m[31m [ 71%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.0-True-32-8-4-64-27-11-8] [32mPASSED[0m[31m [ 75%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.1-False-32-8-2-64-27-5-8] [32mPASSED[0m[31m [ 78%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.1-False-32-8-2-64-27-11-8] [32mPASSED[0m[31m [ 81%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.1-False-32-8-4-64-27-5-8] [32mPASSED[0m[31m [ 84%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.1-False-32-8-4-64-27-11-8] [32mPASSED[0m[31m [ 87%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.1-True-32-8-2-64-27-5-8] [32mPASSED[0m[31m [ 90%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.1-True-32-8-2-64-27-11-8] [32mPASSED[0m[31m [ 93%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.1-True-32-8-4-64-27-5-8] [32mPASSED[0m[31m [ 96%][0m
+tests/hw4_extra/test_transformer.py::test_transformer_model[cuda-0.1-True-32-8-4-64-27-11-8] [32mPASSED[0m[31m [100%][0m
+
+=================================== FAILURES ===================================
+[31m[1m____________ test_transformer_model[cpu-0.1-False-32-8-4-64-27-5-8] ____________[0m
+
+batch_size = 8, seq_len = 5, input_dim = 27, hidden_size = 64, num_layers = 4
+num_head = 8, dim_head = 32, causal = False, dropout = 0.1, device = cpu()
+
+    [0m[37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mbatch_size[39;49;00m[33m"[39;49;00m, [[94m8[39;49;00m])[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mseq_len[39;49;00m[33m"[39;49;00m, [[94m5[39;49;00m, [94m11[39;49;00m])[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33minput_dim[39;49;00m[33m"[39;49;00m, [[94m27[39;49;00m])[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mhidden_size[39;49;00m[33m"[39;49;00m, [[94m64[39;49;00m])[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mnum_layers[39;49;00m[33m"[39;49;00m, [[94m2[39;49;00m, [94m4[39;49;00m])[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mnum_head[39;49;00m[33m"[39;49;00m, [[94m8[39;49;00m])[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mdim_head[39;49;00m[33m"[39;49;00m, [[94m32[39;49;00m])[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mcausal[39;49;00m[33m"[39;49;00m, [[94mFalse[39;49;00m, [94mTrue[39;49;00m])[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mdropout[39;49;00m[33m"[39;49;00m, [[94m0.0[39;49;00m, [94m0.1[39;49;00m])[90m[39;49;00m
+    [37m@pytest[39;49;00m.mark.parametrize([33m"[39;49;00m[33mdevice[39;49;00m[33m"[39;49;00m, _DEVICES, ids=[[33m"[39;49;00m[33mcpu[39;49;00m[33m"[39;49;00m, [33m"[39;49;00m[33mcuda[39;49;00m[33m"[39;49;00m])[90m[39;49;00m
+    [94mdef[39;49;00m[90m [39;49;00m[92mtest_transformer_model[39;49;00m([90m[39;49;00m
+            batch_size, seq_len, input_dim,[90m[39;49;00m
+            hidden_size, num_layers,[90m[39;49;00m
+            num_head, dim_head,[90m[39;49;00m
+            causal, dropout, device):[90m[39;49;00m
+    [90m[39;49;00m
+        np.random.seed([94m19943[39;49;00m)[90m[39;49;00m
+    [90m[39;49;00m
+        x = np.random.randn([90m[39;49;00m
+            batch_size, seq_len, input_dim[90m[39;49;00m
+        ).astype(np.float32)[90m[39;49;00m
+        ndl_x = ndl.Tensor(x, device=device)[90m[39;49;00m
+    [90m[39;49;00m
+        model = nn.Transformer([90m[39;49;00m
+            input_dim, hidden_size, num_layers,[90m[39;49;00m
+            num_head=num_head,[90m[39;49;00m
+            dim_head=dim_head,[90m[39;49;00m
+            dropout=dropout,[90m[39;49;00m
+            causal=causal,[90m[39;49;00m
+            device=device,[90m[39;49;00m
+            batch_first=[94mTrue[39;49;00m,[90m[39;49;00m
+        )[90m[39;49;00m
+    [90m[39;49;00m
+        result, _ = model(ndl_x)[90m[39;49;00m
+    [90m[39;49;00m
+        result = result.numpy()[90m[39;49;00m
+    [90m[39;49;00m
+        current_input_id = [33m"[39;49;00m[33m-[39;49;00m[33m"[39;49;00m.join([[96mstr[39;49;00m(x) [94mfor[39;49;00m x [95min[39;49;00m ([90m[39;49;00m
+            batch_size, seq_len, input_dim,[90m[39;49;00m
+            hidden_size, num_layers,[90m[39;49;00m
+            num_head, dim_head,[90m[39;49;00m
+            causal, dropout, device[90m[39;49;00m
+        )])[90m[39;49;00m
+    [90m[39;49;00m
+        labels_path = ([90m[39;49;00m
+            [33m"[39;49;00m[33m./tests/hw4_extra/data/[39;49;00m[33m"[39;49;00m +[90m[39;49;00m
+            [33m"[39;49;00m[33mtest_transformer_model-[39;49;00m[33m{}[39;49;00m[33m.npy[39;49;00m[33m"[39;49;00m[90m[39;49;00m
+            .format(current_input_id))[90m[39;49;00m
+    [90m[39;49;00m
+        [94mwith[39;49;00m [96mopen[39;49;00m(labels_path, [33m'[39;49;00m[33mrb[39;49;00m[33m'[39;49;00m) [94mas[39;49;00m f:[90m[39;49;00m
+            label_result = np.load(f)[90m[39;49;00m
+    [90m[39;49;00m
+>       np.testing.assert_allclose(result, label_result, atol=[94m1e-5[39;49;00m, rtol=[94m1e-5[39;49;00m)[90m[39;49;00m
+[1m[31mE       AssertionError: [0m
+[1m[31mE       Not equal to tolerance rtol=1e-05, atol=1e-05[0m
+[1m[31mE       [0m
+[1m[31mE       Mismatched elements: 1 / 1080 (0.0926%)[0m
+[1m[31mE       Mismatch at index:[0m
+[1m[31mE        [1, 2, 4]: -0.11611402034759521 (ACTUAL), -0.11610281467437744 (DESIRED)[0m
+[1m[31mE       Max absolute difference among violations: 1.1205673e-05[0m
+[1m[31mE       Max relative difference among violations: 9.651509e-05[0m
+[1m[31mE        ACTUAL: array([[[  4.139568,  -4.409828,   6.086038, ...,   4.515991,[0m
+[1m[31mE                 -1.341103,  -0.164612],[0m
+[1m[31mE               [  6.479436,   0.132785,   2.357935, ...,   5.311312,...[0m
+[1m[31mE        DESIRED: array([[[  4.139565,  -4.409827,   6.086036, ...,   4.515993,[0m
+[1m[31mE                 -1.341105,  -0.164609],[0m
+[1m[31mE               [  6.479433,   0.132786,   2.357935, ...,   5.31131 ,...[0m
+
+_          = needle.Tensor([[[0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+..... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]
+  [0. 0. 0. ... 0. 0. 0.]]])
+batch_size = 8
+causal     = False
+current_input_id = '8-5-27-64-4-8-32-False-0.1-cpu()'
+device     = cpu()
+dim_head   = 32
+dropout    = 0.1
+f          = <_io.BufferedReader name='./tests/hw4_extra/data/test_transformer_model-8-5-27-64-4-8-32-False-0.1-cpu().npy'>
+hidden_size = 64
+input_dim  = 27
+label_result = array([[[  4.139565  ,  -4.4098268 ,   6.0860357 , ...,   4.5159926 ,
+          -1.3411045 ,  -0.16460869],
+        [ ... -1.6818357 ,   1.5380583 , ...,   5.077571  ,
+          -2.86561   ,  -4.7460113 ]]], shape=(8, 5, 27), dtype=float32)
+labels_path = './tests/hw4_extra/data/test_transformer_model-8-5-27-64-4-8-32-False-0.1-cpu().npy'
+model      = <needle.nn.nn_transformer.Transformer object at 0x7632b1cba780>
+ndl_x      = needle.Tensor([[[-0.00804155  0.6315184   2.2527544  ...  0.57792866  1.2252008
+   -1.2465482 ]
+  [ 1.8416243   0.6522...6776533  0.4178168
+   -1.1135957 ]
+  [ 0.6823758  -0.6566193   0.32996404 ...  1.2692264   1.2295368
+   -0.991682  ]]])
+num_head   = 8
+num_layers = 4
+result     = array([[[  4.1395683 ,  -4.4098277 ,   6.0860376 , ...,   4.5159907 ,
+          -1.3411032 ,  -0.16461188],
+        [ ... -1.681839  ,   1.5380597 , ...,   5.0775747 ,
+          -2.8656054 ,  -4.7460117 ]]], shape=(8, 5, 27), dtype=float32)
+seq_len    = 5
+x          = array([[[-0.00804155,  0.6315184 ,  2.2527544 , ...,  0.57792866,
+          1.2252008 , -1.2465482 ],
+        [ 1.8416...58 , -0.6566193 ,  0.32996404, ...,  1.2692264 ,
+          1.2295368 , -0.991682  ]]], shape=(8, 5, 27), dtype=float32)
+
+[1m[31mtests/hw4_extra/test_transformer.py[0m:211: AssertionError
+[36m[1m=========================== short test summary info ============================[0m
+[31mFAILED[0m tests/hw4_extra/test_transformer.py::[1mtest_transformer_model[cpu-0.1-False-32-8-4-64-27-5-8][0m - AssertionError: 
+[31m================= [31m[1m1 failed[0m, [32m31 passed[0m, [33m80 deselected[0m[31m in 3.74s[0m[31m ==================[0m

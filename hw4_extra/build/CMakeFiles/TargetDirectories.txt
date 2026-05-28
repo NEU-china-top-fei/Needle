@@ -1,0 +1,4 @@
+/home/kuris/work/Dlsys/hw4_extra/build/CMakeFiles/ndarray_backend_cpu.dir
+/home/kuris/work/Dlsys/hw4_extra/build/CMakeFiles/ndarray_backend_cuda.dir
+/home/kuris/work/Dlsys/hw4_extra/build/CMakeFiles/edit_cache.dir
+/home/kuris/work/Dlsys/hw4_extra/build/CMakeFiles/rebuild_cache.dir
