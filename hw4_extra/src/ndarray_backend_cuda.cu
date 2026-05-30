@@ -584,6 +584,82 @@ namespace needle
       /// END SOLUTION
     }
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // FlashAttention: fused scaled dot-product attention
+    ////////////////////////////////////////////////////////////////////////////////
+
+    // Process D in tiles to avoid register spilling for large head dims.
+    // Each thread handles one Q row; online softmax avoids materializing NxN.
+    __global__ void FlashAttnFwdKernel(
+        const scalar_t *pQ, const scalar_t *pK, const scalar_t *pVal,
+        scalar_t *pOut,
+        uint32_t B, uint32_t H, uint32_t N, uint32_t D,
+        bool causal, float softmax_scale)
+    {
+      size_t total_rows = B * H * N;
+      size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+      if (idx >= total_rows) return;
+
+      // Decode linear idx → (b, h, query_pos)
+      size_t i = idx % N;            // query position
+      size_t h = (idx / N) % H;      // head index
+      size_t b = idx / (N * H);      // batch index
+
+      size_t head_off = (b * H + h) * N * D;
+      const scalar_t *Qi = pQ + head_off + i * D;
+      scalar_t       *Oi = pOut + head_off + i * D;
+
+      // ── online softmax state ──
+      float m_i = -1e30f;
+      float l_i = 0.0f;
+
+      // Zero the output (used as accumulator)
+      for (size_t d = 0; d < D; d++) Oi[d] = 0.0f;
+
+      // ── scan over all K/V positions ──
+      for (size_t j = 0; j < N; j++)
+      {
+        if (causal && j > i) continue;
+
+        const scalar_t *Kj = pK + head_off + j * D;
+
+        // Dot product Qi · Kj
+        float score = 0.0f;
+        for (size_t d = 0; d < D; d++) score += Qi[d] * Kj[d];
+        score *= softmax_scale;
+
+        // Online softmax update
+        float m_new = fmaxf(m_i, score);
+        float exp_val = expf(score - m_new);
+        float l_new  = l_i * expf(m_i - m_new) + exp_val;
+        float rescale = expf(m_i - m_new);
+
+        const scalar_t *Vj = pVal + head_off + j * D;
+        for (size_t d = 0; d < D; d++)
+          Oi[d] = Oi[d] * rescale + exp_val * Vj[d];
+
+        m_i = m_new;
+        l_i = l_new;
+      }
+
+      // ── normalize ──
+      float inv_l = 1.0f / l_i;
+      for (size_t d = 0; d < D; d++) Oi[d] *= inv_l;
+    }
+
+    void FlashAttention(
+        const CudaArray &q, const CudaArray &k, const CudaArray &v,
+        CudaArray *out,
+        uint32_t B, uint32_t H, uint32_t N, uint32_t D,
+        bool causal, float softmax_scale)
+    {
+      size_t total_rows = B * H * N;
+      CudaDims dim = CudaOneDim(total_rows);
+      FlashAttnFwdKernel<<<dim.grid, dim.block>>>(
+          q.ptr, k.ptr, v.ptr, out->ptr,
+          B, H, N, D, causal, softmax_scale);
+    }
+
   } // namespace cuda
 } // namespace needle
 
@@ -632,6 +708,7 @@ PYBIND11_MODULE(ndarray_backend_cuda, m)
   m.def("scalar_setitem", ScalarSetitem);
   m.def("ewise_add", EwiseAdd);
   m.def("scalar_add", ScalarAdd);
+  m.def("flash_attention",FlashAttention);
 
   REGISTERELE("ewise_mul", MUL());
   REGISTERSCA("scalar_mul", MUL());

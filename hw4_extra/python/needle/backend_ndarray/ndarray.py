@@ -592,6 +592,40 @@ class NDArray:
             )
             return out
 
+    def flash_attention(
+        self,
+        k: "NDArray",
+        v: "NDArray",
+        causal: bool = False,
+        softmax_scale: float = 1.0,
+    ) -> "NDArray":
+        """
+        FlashAttention: fused scaled dot-product attention.
+
+        All inputs must be compact 4D arrays of shape (B, H, N, D).
+        Returns output of shape (B, H, N, D).
+
+        Args:
+            k: key array, same shape as self
+            v: value array, same shape as self
+            causal: apply causal mask (upper triangle = -inf)
+            softmax_scale: scale factor for QK^T (typically 1/sqrt(D))
+        """
+        assert self.ndim == 4 and k.ndim == 4 and v.ndim == 4
+        assert self.shape == k.shape == v.shape
+        B, H, N, D = self.shape
+        out = NDArray.make(self.shape, device=self.device)
+        self.device.flash_attention(
+            self.compact()._handle,
+            k.compact()._handle,
+            v.compact()._handle,
+            out._handle,
+            B, H, N, D,
+            causal,
+            softmax_scale,
+        )
+        return out
+
     ### Reductions, i.e., sum/max over all element or over given axis
     def reduce_view_out(self, axis: int | tuple[int, ...] | list[int] | None, keepdims: bool = False) -> tuple["NDArray", "NDArray"]:
         """ Return a view to the array set up for reduction functions and output array. """

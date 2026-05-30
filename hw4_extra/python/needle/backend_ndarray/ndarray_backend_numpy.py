@@ -115,3 +115,40 @@ def reduce_max(a, out, reduce_size):
 
 def reduce_sum(a, out, reduce_size):
     out.array[:] = a.array[:].reshape(-1, reduce_size).sum(axis=1)
+
+
+def flash_attention(q, k, v, out, B, H, N, D, causal, softmax_scale):
+    """
+    FlashAttention reference implementation (numpy backend).
+
+    Args:
+        q, k, v: compact Array handles, each of shape (B, H, N, D)
+        out: output Array handle, shape (B, H, N, D)
+        B: batch size
+        H: number of heads
+        N: sequence length
+        D: head dimension
+        causal: whether to apply causal mask
+        softmax_scale: 1/sqrt(D)
+    """
+    q_arr = q.array.reshape(B, H, N, D)
+    k_arr = k.array.reshape(B, H, N, D)
+    v_arr = v.array.reshape(B, H, N, D)
+
+    # S = Q @ K^T * scale  ->  (B, H, N, N)
+    S = q_arr @ k_arr.transpose(0, 1, 3, 2)
+    S *= softmax_scale
+
+    if causal:
+        mask = np.triu(np.ones((N, N), dtype=np.float32) * (-np.inf), 1)
+        S += mask.reshape(1, 1, N, N)
+
+    # stable softmax along last dim
+    S_max = S.max(axis=-1, keepdims=True)
+    S_exp = np.exp(S - S_max)
+    P = S_exp / S_exp.sum(axis=-1, keepdims=True)
+
+    # O = P @ V  ->  (B, H, N, D)
+    O = P @ v_arr
+
+    out.array[:] = O.reshape(-1)

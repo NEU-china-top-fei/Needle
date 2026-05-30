@@ -27,6 +27,7 @@ class MultiHeadAttention(Module):
         causal = False,
         device = None,
         dtype = "float32",
+        use_flash_attn = False,
     ):
 
         super().__init__()
@@ -35,6 +36,7 @@ class MultiHeadAttention(Module):
         self.dtype = dtype
 
         self.causal = causal
+        self.use_flash_attn = use_flash_attn
         self.dropout = Dropout(dropout)
 
     def create_causal_mask(self, i, j, device):
@@ -109,11 +111,20 @@ class MultiHeadAttention(Module):
         probs = None
 
         ### BEGIN YOUR SOLUTION
-        pre_score=self.matmul(q,k)/np.sqrt(q_dim)
-        if self.causal:
-            pre_score+=self.create_causal_mask(queries_len,queries_len,device=self.device).broadcast_to((batch_size,num_head,queries_len,queries_len))
-        probs=self.dropout(self.softmax(pre_score))
-        result=self.matmul(probs,v.transpose())
+        if self.use_flash_attn:
+            softmax_scale = 1.0 / np.sqrt(q_dim)
+            result = ops.flash_attention(
+                q, k, v,
+                causal=self.causal,
+                softmax_scale=softmax_scale,
+            )
+            probs = None
+        else:
+            pre_score=self.matmul(q,k)/np.sqrt(q_dim)
+            if self.causal:
+                pre_score+=self.create_causal_mask(queries_len,queries_len,device=self.device).broadcast_to((batch_size,num_head,queries_len,queries_len))
+            probs=self.dropout(self.softmax(pre_score))
+            result=self.matmul(probs,v.transpose())
         ### END YOUR SOLUTION
 
         return result, probs
@@ -134,6 +145,7 @@ class AttentionLayer(Module):
         causal = True,
         device = None,
         dtype = "float32",
+        use_flash_attn = False,
     ):
 
         super().__init__()
@@ -164,7 +176,7 @@ class AttentionLayer(Module):
             v_features, device=device, dtype=dtype)
 
         inner_dim = num_head * dim_head
-        
+
         self.q_projection = Linear(
             q_features, inner_dim, bias=False,
             device=device, dtype=dtype)
@@ -177,7 +189,8 @@ class AttentionLayer(Module):
 
         self.attn = MultiHeadAttention(
             dropout=dropout, causal=causal,
-            device=device, dtype=dtype)
+            device=device, dtype=dtype,
+            use_flash_attn=use_flash_attn)
 
         self.out_projection = Linear(
             inner_dim, out_features, bias=False,
@@ -230,6 +243,7 @@ class TransformerLayer(Module):
         causal = True,
         device = None,
         dtype = "float32",
+        use_flash_attn = False,
     ):
 
         super().__init__()
@@ -238,7 +252,7 @@ class TransformerLayer(Module):
         self.dtype = dtype
 
         ### BEGIN YOUR SOLUTION
-        self.multiattn=AttentionLayer(q_features,num_head,dim_head,causal=causal,device=device,dtype=dtype,dropout=dropout)
+        self.multiattn=AttentionLayer(q_features,num_head,dim_head,causal=causal,device=device,dtype=dtype,dropout=dropout,use_flash_attn=use_flash_attn)
         self.drop=Dropout(dropout)
         self.norm=LayerNorm1d(q_features,device=device,dtype=dtype)
         self.linear1=Linear(q_features,hidden_size,device=device,dtype=dtype)
@@ -272,7 +286,7 @@ class Transformer(Module):
         self,
         embedding_size: int,
         hidden_size: int,
-        num_layers: int, 
+        num_layers: int,
         *,
         num_head: int = 8,
         dim_head: int = 32,
@@ -281,7 +295,8 @@ class Transformer(Module):
         device = None,
         dtype = "float32",
         batch_first = False,
-        sequence_len = 2048
+        sequence_len = 2048,
+        use_flash_attn = False,
     ):
 
         super().__init__()
@@ -292,9 +307,9 @@ class Transformer(Module):
 
         ### BEGIN YOUR SOLUTION
         self.positionembed=Embedding(sequence_len,embedding_size,device=device,dtype=dtype)
-       
+
         transformerlayer=[TransformerLayer(embedding_size,num_head=num_head,dim_head=dim_head,hidden_size=hidden_size,dropout=dropout,
-                                              causal=causal,device=device,dtype=dtype) for _ in range(num_layers)]
+                                              causal=causal,device=device,dtype=dtype,use_flash_attn=use_flash_attn) for _ in range(num_layers)]
         self.num_layers=num_layers
         self.sequence_len=sequence_len
         self.model=Sequential(*transformerlayer)

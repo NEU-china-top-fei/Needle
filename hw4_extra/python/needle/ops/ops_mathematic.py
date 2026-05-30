@@ -577,6 +577,77 @@ def permute(A,axes):
     return Permute(axes)(A)
 
 
+class FlashAttention(TensorOp):
+    """Fused scaled dot-product attention (FlashAttention).
+
+    Inputs: Q, K, V — all shape (batch, num_heads, seq_len, dim_head)
+    Returns: O — shape (batch, num_heads, seq_len, dim_head)
+
+    Forward:  O = softmax(Q @ K^T * scale [+ causal_mask]) @ V
+    Backward: analytic gradient computed via NDArray-level numpy ops.
+    """
+
+    def __init__(self, causal: bool = False, softmax_scale: float = 1.0):
+        self.causal = causal
+        self.softmax_scale = softmax_scale
+
+    def compute(self, q, k, v):
+        return q.flash_attention(k, v,
+                                 causal=self.causal,
+                                 softmax_scale=self.softmax_scale)
+
+    def gradient(self, out_grad, node):
+        q, k, v = [inp.realize_cached_data() for inp in node.inputs]
+        dO = out_grad.realize_cached_data()
+
+        B, H, N, D = q.shape
+        scale = self.softmax_scale
+
+        # Convert to numpy for batched linear algebra
+        q_np = q.numpy().reshape(B, H, N, D)
+        k_np = k.numpy().reshape(B, H, N, D)
+        v_np = v.numpy().reshape(B, H, N, D)
+        dO_np = dO.numpy().reshape(B, H, N, D)
+
+        # ── recompute forward: S, P ──
+        S_np = q_np @ k_np.transpose(0, 1, 3, 2)  # (B, H, N, N)
+        S_np *= scale
+        if self.causal:
+            mask = np.triu(np.ones((N, N), dtype=np.float32) * (-np.inf), 1)
+            S_np += mask.reshape(1, 1, N, N)
+
+        S_max = S_np.max(axis=-1, keepdims=True)
+        S_exp = np.exp(S_np - S_max)
+        P_np = S_exp / S_exp.sum(axis=-1, keepdims=True)
+
+        # ── gradients ──
+        # dP = dO @ V^T
+        dP_np = dO_np @ v_np.transpose(0, 1, 3, 2)  # (B, H, N, N)
+
+        # dS = P * (dP - sum(dP * P, axis=-1, keepdims=True))  (softmax grad)
+        dS_np = P_np * (dP_np - (dP_np * P_np).sum(axis=-1, keepdims=True))
+
+        # dQ = dS @ K * scale
+        dQ_np = (dS_np @ k_np) * scale  # (B, H, N, N) @ (B, H, N, D) -> (B, H, N, D)
+
+        # dK = dS^T @ Q * scale
+        dK_np = dS_np.transpose(0, 1, 3, 2) @ q_np * scale
+
+        # dV = P^T @ dO
+        dV_np = P_np.transpose(0, 1, 3, 2) @ dO_np
+
+        from ..autograd import Tensor
+        dQ = Tensor(dQ_np.reshape(B * H * N * D), device=q.device, dtype=q.dtype)
+        dK = Tensor(dK_np.reshape(B * H * N * D), device=k.device, dtype=k.dtype)
+        dV = Tensor(dV_np.reshape(B * H * N * D), device=v.device, dtype=v.dtype)
+
+        return (dQ, dK, dV)
+
+
+def flash_attention(q, k, v, causal=False, softmax_scale=1.0):
+    return FlashAttention(causal=causal, softmax_scale=softmax_scale)(q, k, v)
+
+
 class RNNFusedOp(TensorOp):
     """Fused multi-layer RNN: forward in one op at NDArray level.
 
