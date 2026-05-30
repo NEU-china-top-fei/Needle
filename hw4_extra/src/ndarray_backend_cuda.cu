@@ -660,6 +660,69 @@ namespace needle
           B, H, N, D, causal, softmax_scale);
     }
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // Fused LayerNorm
+    ////////////////////////////////////////////////////////////////////////////////
+
+    // Block-wide reduction helper: sum across all threads in the block
+    __device__ float block_reduce_sum(float val, float *smem, int block_size) {
+      int tid = threadIdx.x;
+      smem[tid] = val;
+      __syncthreads();
+      for (int stride = block_size / 2; stride > 0; stride >>= 1) {
+        if (tid < stride) smem[tid] += smem[tid + stride];
+        __syncthreads();
+      }
+      return smem[0];
+    }
+
+    __global__ void LayerNormFwdKernel(
+        const scalar_t *x, const scalar_t *weight, const scalar_t *bias,
+        scalar_t *out,
+        uint32_t D, float eps)
+    {
+      // One block per row; N = gridDim.x
+      int row = blockIdx.x;
+      int block_size = blockDim.x;
+      int tid = threadIdx.x;
+
+      const scalar_t *xi = x + row * D;
+      scalar_t *oi = out + row * D;
+
+      extern __shared__ float smem[];
+
+      // ── pass 1: mean ──
+      float local_sum = 0.0f;
+      for (int d = tid; d < D; d += block_size)
+        local_sum += xi[d];
+      float mean = block_reduce_sum(local_sum, smem, block_size) / D;
+
+      // ── pass 2: variance ──
+      float local_var = 0.0f;
+      for (int d = tid; d < D; d += block_size) {
+        float diff = xi[d] - mean;
+        local_var += diff * diff;
+      }
+      float var = block_reduce_sum(local_var, smem, block_size) / D;
+
+      // ── pass 3: normalize + scale + shift ──
+      float inv_std = rsqrtf(var + eps);
+      for (int d = tid; d < D; d += block_size)
+        oi[d] = weight[d] * (xi[d] - mean) * inv_std + bias[d];
+    }
+
+    void LayerNorm(
+        const CudaArray &x, const CudaArray &weight, const CudaArray &bias,
+        CudaArray *out,
+        uint32_t N, uint32_t D, float eps)
+    {
+      dim3 grid(N);
+      dim3 block(BASE_THREAD_NUM);
+      size_t smem_bytes = BASE_THREAD_NUM * sizeof(float);
+      LayerNormFwdKernel<<<grid, block, smem_bytes>>>(
+          x.ptr, weight.ptr, bias.ptr, out->ptr, D, eps);
+    }
+
   } // namespace cuda
 } // namespace needle
 
@@ -709,6 +772,7 @@ PYBIND11_MODULE(ndarray_backend_cuda, m)
   m.def("ewise_add", EwiseAdd);
   m.def("scalar_add", ScalarAdd);
   m.def("flash_attention",FlashAttention);
+  m.def("layernorm",LayerNorm);
 
   REGISTERELE("ewise_mul", MUL());
   REGISTERSCA("scalar_mul", MUL());

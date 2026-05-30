@@ -177,10 +177,12 @@ class BatchNorm1d(Module):
 
 
 class LayerNorm1d(Module):
-    def __init__(self, dim: int, eps: float = 1e-5, device: Any | None = None, dtype: str = "float32") -> None:
+    def __init__(self, dim: int, eps: float = 1e-5, device: Any | None = None, dtype: str = "float32",
+                 use_layernorm: bool = True) -> None:
         super().__init__()
         self.dim = dim
         self.eps = eps
+        self.use_layernorm = use_layernorm
         ### BEGIN YOUR SOLUTION
         self.weight=Parameter(init.ones(dim,1,device=device,dtype=dtype))
         self.bias=Parameter(init.zeros(dim,1,device=device,dtype=dtype))
@@ -188,12 +190,19 @@ class LayerNorm1d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        bs,fn=x.shape
-        expectation=(x.sum(axes=(1,))/fn).reshape((bs,1)).broadcast_to(x.shape)
-        delta=x-expectation
-        variance=((delta*delta).sum(axes=(1,))/fn).reshape((bs,1))
-        de=ops.power_scalar(variance+self.eps,0.5).broadcast_to(x.shape)
-        return self.weight.reshape((1,fn)).broadcast_to(x.shape)*delta/de+self.bias.reshape((1,fn)).broadcast_to(x.shape)
+        if self.use_layernorm:
+            w = ops.reshape(self.weight, (self.dim,))
+            b = ops.reshape(self.bias, (self.dim,))
+            return ops.layernorm(x, w, b, eps=self.eps)
+        else:
+            # Original op-by-op implementation
+            bs, fn = x.shape
+            expectation = (x.sum(axes=(1,)) / fn).reshape((bs, 1)).broadcast_to(x.shape)
+            delta = x - expectation
+            variance = ((delta * delta).sum(axes=(1,)) / fn).reshape((bs, 1))
+            de = ops.power_scalar(variance + self.eps, 0.5).broadcast_to(x.shape)
+            return (self.weight.reshape((1, fn)).broadcast_to(x.shape) * delta / de
+                    + self.bias.reshape((1, fn)).broadcast_to(x.shape))
         ### END YOUR SOLUTION
 
 

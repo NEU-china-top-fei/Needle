@@ -152,3 +152,28 @@ def flash_attention(q, k, v, out, B, H, N, D, causal, softmax_scale):
     O = P @ v_arr
 
     out.array[:] = O.reshape(-1)
+
+
+def layernorm(x, weight, bias, out, N, D, eps):
+    """
+    Fused LayerNorm reference (numpy backend).
+
+    Args:
+        x: compact array of shape (N, D)
+        weight: compact array of shape (D,)
+        bias: compact array of shape (D,)
+        out: output array of shape (N, D)
+        N: batch dimension (number of rows)
+        D: feature dimension
+        eps: epsilon
+    """
+    x_arr = x.array.reshape(N, D)
+    w_arr = weight.array.reshape(D)
+    b_arr = bias.array.reshape(D)
+
+    mean = x_arr.mean(axis=1, keepdims=True)
+    var = ((x_arr - mean) ** 2).mean(axis=1, keepdims=True)
+    inv_std = 1.0 / np.sqrt(var + eps)
+    out_arr = w_arr * (x_arr - mean) * inv_std + b_arr
+
+    out.array[:] = out_arr.reshape(-1)

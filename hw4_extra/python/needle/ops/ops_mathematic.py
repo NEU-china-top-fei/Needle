@@ -648,6 +648,53 @@ def flash_attention(q, k, v, causal=False, softmax_scale=1.0):
     return FlashAttention(causal=causal, softmax_scale=softmax_scale)(q, k, v)
 
 
+class FusedLayerNorm(TensorOp):
+    """Fused LayerNorm: out = weight * (x - mean) / sqrt(var + eps) + bias."""
+
+    def __init__(self, eps: float = 1e-5):
+        self.eps = eps
+
+    def compute(self, x, weight, bias):
+        return x.layernorm(weight, bias, eps=self.eps)
+
+    def gradient(self, out_grad, node):
+        x, weight, bias = node.inputs
+        N, D = x.shape
+
+        x_np = x.realize_cached_data().numpy().reshape(N, D)
+        w_np = weight.realize_cached_data().numpy().reshape(D)
+        dO_np = out_grad.realize_cached_data().numpy().reshape(N, D)
+
+        mean = x_np.mean(axis=1, keepdims=True)
+        diff = x_np - mean
+        var = (diff * diff).mean(axis=1, keepdims=True)
+        inv_std = 1.0 / np.sqrt(var + self.eps)
+
+        x_hat = diff * inv_std
+
+        # dX
+        dx_hat = dO_np * w_np
+        dvar = (dx_hat * diff).sum(axis=1, keepdims=True) * (-0.5) * (inv_std ** 3)
+        dmean = dx_hat.sum(axis=1, keepdims=True) * (-inv_std) + dvar * (-2.0 / D) * diff.sum(axis=1, keepdims=True)
+        dx_np = dx_hat * inv_std + dvar * (2.0 / D) * diff + dmean / D
+
+        # dW
+        dw_np = (dO_np * x_hat).sum(axis=0)
+
+        # dB
+        db_np = dO_np.sum(axis=0)
+
+        from ..autograd import Tensor
+        dX = Tensor(dx_np.reshape(N * D), device=x.device, dtype=x.dtype)
+        dW = Tensor(dw_np.reshape(D), device=weight.device, dtype=weight.dtype)
+        dB = Tensor(db_np.reshape(D), device=bias.device, dtype=bias.dtype)
+        return (dX, dW, dB)
+
+
+def layernorm(x, weight, bias, eps=1e-5):
+    return FusedLayerNorm(eps=eps)(x, weight, bias)
+
+
 class RNNFusedOp(TensorOp):
     """Fused multi-layer RNN: forward in one op at NDArray level.
 

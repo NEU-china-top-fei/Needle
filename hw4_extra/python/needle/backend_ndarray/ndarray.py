@@ -592,6 +592,34 @@ class NDArray:
             )
             return out
 
+    def layernorm(
+        self,
+        weight: "NDArray",
+        bias: "NDArray",
+        eps: float = 1e-5,
+    ) -> "NDArray":
+        """
+        Fused LayerNorm: out = weight * (x - mean) / sqrt(var + eps) + bias.
+
+        Args:
+            weight: shape (D,), compact
+            bias:   shape (D,), compact
+            eps:    epsilon
+        Returns:
+            out: shape (N, D)
+        """
+        assert self.ndim == 2
+        N, D = self.shape
+        out = NDArray.make(self.shape, device=self.device)
+        self.device.layernorm(
+            self.compact()._handle,
+            weight.compact()._handle,
+            bias.compact()._handle,
+            out._handle,
+            N, D, eps,
+        )
+        return out
+
     def flash_attention(
         self,
         k: "NDArray",

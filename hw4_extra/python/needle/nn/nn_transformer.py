@@ -146,6 +146,7 @@ class AttentionLayer(Module):
         device = None,
         dtype = "float32",
         use_flash_attn = False,
+        use_layernorm = True,
     ):
 
         super().__init__()
@@ -169,11 +170,11 @@ class AttentionLayer(Module):
         self.dim_head = dim_head
 
         self.prenorm_q = LayerNorm1d(
-            q_features, device=device, dtype=dtype)
+            q_features, device=device, dtype=dtype, use_layernorm=use_layernorm)
         self.prenorm_k = LayerNorm1d(
-            k_features, device=device, dtype=dtype)
+            k_features, device=device, dtype=dtype, use_layernorm=use_layernorm)
         self.prenorm_v = LayerNorm1d(
-            v_features, device=device, dtype=dtype)
+            v_features, device=device, dtype=dtype, use_layernorm=use_layernorm)
 
         inner_dim = num_head * dim_head
 
@@ -244,6 +245,7 @@ class TransformerLayer(Module):
         device = None,
         dtype = "float32",
         use_flash_attn = False,
+        use_layernorm = True,
     ):
 
         super().__init__()
@@ -252,9 +254,9 @@ class TransformerLayer(Module):
         self.dtype = dtype
 
         ### BEGIN YOUR SOLUTION
-        self.multiattn=AttentionLayer(q_features,num_head,dim_head,causal=causal,device=device,dtype=dtype,dropout=dropout,use_flash_attn=use_flash_attn)
+        self.multiattn=AttentionLayer(q_features,num_head,dim_head,causal=causal,device=device,dtype=dtype,dropout=dropout,use_flash_attn=use_flash_attn,use_layernorm=use_layernorm)
         self.drop=Dropout(dropout)
-        self.norm=LayerNorm1d(q_features,device=device,dtype=dtype)
+        self.norm=LayerNorm1d(q_features,device=device,dtype=dtype,use_layernorm=use_layernorm)
         self.linear1=Linear(q_features,hidden_size,device=device,dtype=dtype)
         self.linear2=Linear(hidden_size,q_features,device=device,dtype=dtype)
         self.nonlinear=ReLU()
@@ -297,6 +299,7 @@ class Transformer(Module):
         batch_first = False,
         sequence_len = 2048,
         use_flash_attn = False,
+        use_layernorm = True,
     ):
 
         super().__init__()
@@ -309,7 +312,7 @@ class Transformer(Module):
         self.positionembed=Embedding(sequence_len,embedding_size,device=device,dtype=dtype)
 
         transformerlayer=[TransformerLayer(embedding_size,num_head=num_head,dim_head=dim_head,hidden_size=hidden_size,dropout=dropout,
-                                              causal=causal,device=device,dtype=dtype,use_flash_attn=use_flash_attn) for _ in range(num_layers)]
+                                              causal=causal,device=device,dtype=dtype,use_flash_attn=use_flash_attn,use_layernorm=use_layernorm) for _ in range(num_layers)]
         self.num_layers=num_layers
         self.sequence_len=sequence_len
         self.model=Sequential(*transformerlayer)
