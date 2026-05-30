@@ -1,0 +1,217 @@
+Using needle backend
+==============================================================================================================
+needle Transformer vs PyTorch Transformer — Performance Benchmark
+  columns: orig (use_flash_attn=False) | flash (use_flash_attn=True) | torch
+==============================================================================================================
+========================================================================================================================
+0. LayerNorm: Fused vs Original A/B Comparison  (CUDA)
+========================================================================================================================
+  LN tiny       (N=4,D=256)  orig= 148.77 µs  fused=  18.52 µs  torch=   8.69 µs  fused_vs_orig=8.0x  orig_vs_torch=17.1x  fused_vs_torch=2.1x
+  LN small      (N=8,D=1024)  orig= 209.22 µs  fused=  20.90 µs  torch=   8.19 µs  fused_vs_orig=10.0x  orig_vs_torch=25.5x  fused_vs_torch=2.6x
+  LN medium     (N=16,D=1024)  orig= 232.87 µs  fused=  19.53 µs  torch=   8.48 µs  fused_vs_orig=11.9x  orig_vs_torch=27.5x  fused_vs_torch=2.3x
+  LN large      (N=32,D=2048)  orig= 673.83 µs  fused=  22.21 µs  torch=   8.73 µs  fused_vs_orig=30.3x  orig_vs_torch=77.2x  fused_vs_torch=2.5x
+
+  [correctness] fused vs original vs torch:
+    max diff (fused vs orig):  9.536743e-07  ✓
+    max diff (fused vs torch): 4.768372e-07  ✓
+
+  ── TransformerLayer: Fused-LN vs Original-LN ──
+    TL LN-fused               12.03 ms
+    TL LN-orig                12.97 ms
+
+  ── LayerNorm Op-Level Breakdown (N=512,D=256) ──
+    fused layernorm  (1 op):       26.91 µs
+    original layernorm (19 ops total):
+      sum(mean):            42.20 µs
+      div(mean/D):          11.00 µs
+      reshape(mean):         2.71 µs
+      broadcast(mean):       1.47 µs
+      sub(x-mean):         231.34 µs
+      square(delta^2):      12.13 µs
+      sum(var):             42.59 µs
+      div(var/D):           11.01 µs
+      reshape(var):          2.70 µs
+      add_eps:              11.06 µs
+      sqrt:                  9.84 µs
+      broadcast(std):        1.52 µs
+      ─────────────────────────────────────────────
+      original sum(12):     379.56 µs
+      fused (1 op):          26.91 µs
+      speedup: 14.1x
+==============================================================================================================
+1. MultiHeadAttention  forward  (CUDA)
+==============================================================================================================
+  MHA tiny                orig= 243.04 µs  flash=  37.91 µs  torch= 187.51 µs  flash_vs_orig=6.4x  orig_vs_torch=1.3x  flash_vs_torch=0.2x
+  MHA small               orig=   9.01 ms  flash= 573.54 µs  torch= 123.91 µs  flash_vs_orig=15.7x  orig_vs_torch=72.7x  flash_vs_torch=4.6x
+  MHA medium              orig= 110.24 ms  flash=   6.38 ms  torch= 789.66 µs  flash_vs_orig=17.3x  orig_vs_torch=139.6x  flash_vs_torch=8.1x
+  MHA large               orig=  31.44 ms  flash=   2.15 ms  torch= 227.40 µs  flash_vs_orig=14.6x  orig_vs_torch=138.2x  flash_vs_torch=9.5x
+
+  [correctness] Checking flash_attn output vs original (tiny config):
+    max absolute difference: 4.768372e-07  ✓ PASS
+
+==============================================================================================================
+2. TransformerLayer  forward  (CUDA)
+==============================================================================================================
+  TL tiny                 orig= 589.01 µs  flash= 302.88 µs  torch= 233.60 µs  flash_vs_orig=1.9x  orig_vs_torch=2.5x  flash_vs_torch=1.3x
+  TL small                orig=  20.28 ms  flash=  11.23 ms  torch= 229.26 µs  flash_vs_orig=1.8x  orig_vs_torch=88.5x  flash_vs_torch=49.0x
+  TL medium               orig= 287.87 ms  flash= 181.32 ms  torch=   2.44 ms  flash_vs_orig=1.6x  orig_vs_torch=118.0x  flash_vs_torch=74.3x
+  TL large                orig=  75.61 ms  flash=  46.93 ms  torch= 563.49 µs  flash_vs_orig=1.6x  orig_vs_torch=134.2x  flash_vs_torch=83.3x
+
+==============================================================================================================
+3. Transformer (full model)  forward  (CUDA)
+==============================================================================================================
+  TF tiny                 orig=   1.53 ms  flash= 755.71 µs  torch= 500.56 µs  flash_vs_orig=2.0x  orig_vs_torch=3.1x  flash_vs_torch=1.5x
+  TF small                orig=  60.92 ms  flash=  36.87 ms  torch= 733.15 µs  flash_vs_orig=1.7x  orig_vs_torch=83.1x  flash_vs_torch=50.3x
+  TF medium               orig=  1.1716 s  flash= 729.97 ms  torch=  13.14 ms  flash_vs_orig=1.6x  orig_vs_torch=89.2x  flash_vs_torch=55.6x
+  TF large                orig= 305.25 ms  flash= 191.45 ms  torch=   2.52 ms  flash_vs_orig=1.6x  orig_vs_torch=121.1x  flash_vs_torch=75.9x
+
+==============================================================================================================
+4. TransformerLayer scaling over seq_len  (CUDA)
+==============================================================================================================
+  seq_len=16              orig=   2.77 ms  flash=   1.96 ms  torch= 240.72 µs  flash_vs_orig=1.4x  orig_vs_torch=11.5x  flash_vs_torch=8.2x
+  seq_len=32              orig=   4.17 ms  flash=   3.03 ms  torch= 256.47 µs  flash_vs_orig=1.4x  orig_vs_torch=16.3x  flash_vs_torch=11.8x
+  seq_len=64              orig=  10.26 ms  flash=   6.13 ms  torch= 229.64 µs  flash_vs_orig=1.7x  orig_vs_torch=44.7x  flash_vs_torch=26.7x
+  seq_len=128             orig=  28.55 ms  flash=  11.60 ms  torch= 243.65 µs  flash_vs_orig=2.5x  orig_vs_torch=117.2x  flash_vs_torch=47.6x
+  seq_len=256             orig=  81.37 ms  flash=  24.15 ms  torch= 431.73 µs  flash_vs_orig=3.4x  orig_vs_torch=188.5x  flash_vs_torch=55.9x
+  seq_len=512             orig= 247.37 ms  flash=  59.82 ms  torch=   1.10 ms  flash_vs_orig=4.1x  orig_vs_torch=224.3x  flash_vs_torch=54.2x
+
+==============================================================================================================
+5. Detailed Per-Component Profile — TransformerLayer (CUDA)
+==============================================================================================================
+
+  ── Individual Ops ──
+    LayerNorm (fused)                               26.74 µs
+    Linear (d->num_head*dim_head)                  925.11 µs
+    Linear FFN (d->hidden)                           3.19 ms
+    Linear FFN (hidden->d)                           3.47 ms
+    ReLU                                           107.45 µs
+    Dropout (eval=identity)                          0.24 µs
+    Element-wise Add (residual)                     12.24 µs
+    Permute (0,2,1,3) 4D tensor                      1.53 µs
+    Reshape (N,d)->(B,N,num,dim)                     2.91 µs
+
+  ── MultiHeadAttention Breakdown ──
+    MHA: custom matmul (5D broadcast)                3.90 ms
+    MHA: softmax (original, 6 ops)                 498.66 µs
+    MHA: FlashAttn (fused kernel)                  574.59 µs
+
+  ── AttentionLayer Sub-Module Breakdown (flash mode) ──
+      prenorm_q (LayerNorm)                         26.12 µs
+      q_projection (Linear)                        793.05 µs
+      flash_attention (MHA core)                   582.09 µs
+      out_projection (Linear)                      782.67 µs
+
+  ── TransformerLayer Component Tree (flash mode, one forward) ──
+    TL: self-attention sublayer (total)              4.03 ms
+    TL: LayerNorm (after attn)                      33.76 µs
+    TL: Linear1 (d->hidden)                          3.35 ms
+    TL: ReLU                                       102.89 µs
+    TL: Dropout (after Linear1)                      0.24 µs
+    TL: Linear2 (hidden->d)                          3.60 ms
+    TL: Dropout (after Linear2)                      0.24 µs
+
+  ── Component Time Breakdown ──
+  Component                                   Time       %
+  ------------------------------------------------------
+  Attention sub-layer                      4.03 ms   36.2%
+  Linear2 (hidden→d)                       3.60 ms   32.4%
+  Linear1 (d→hidden)                       3.35 ms   30.1%
+  ReLU                                   102.89 µs    0.9%
+  LayerNorm (FFN)                         33.76 µs    0.3%
+  Dropout1                                 0.24 µs    0.0%
+  Dropout2                                 0.24 µs    0.0%
+  ------------------------------------------------------
+  Sum of profiled components              11.12 ms
+    
+TL: full forward (flash)                       10.98 ms
+  Overhead (dispatch/alloc/reshape)        0.00 µs
+
+
+  ══ cProfile: TransformerLayer (use_flash_attn=True) ══
+         2536 function calls (2457 primitive calls) in 0.014 seconds
+
+   Ordered by: cumulative time
+   List reduced from 77 to 30 due to restriction <30>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.014    0.014 /home/kuris/work/Dlsys/hw4_extra/benchmark_transformer.py:746(<lambda>)
+     17/1    0.000    0.000    0.014    0.014 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_basic.py:73(__call__)
+        1    0.000    0.000    0.014    0.014 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_transformer.py:265(forward)
+       43    0.000    0.000    0.013    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:74(__call__)
+       43    0.000    0.000    0.013    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:230(make_from_op)
+   115/52    0.000    0.000    0.013    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:96(realize_cached_data)
+        6    0.000    0.000    0.008    0.001 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_basic.py:96(forward)
+        4    0.000    0.000    0.007    0.002 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:306(__add__)
+        5    0.006    0.001    0.007    0.001 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:451(ewise_or_scalar)
+        4    0.000    0.000    0.007    0.002 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:21(compute)
+        4    0.000    0.000    0.007    0.002 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:468(__add__)
+        1    0.000    0.000    0.005    0.005 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_transformer.py:200(forward)
+       21    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:188(compute)
+        6    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:288(matmul)
+       90    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:225(is_compact)
+       33    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:255(reshape)
+        4    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_basic.py:191(forward)
+       57    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:233(compact)
+        6    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:263(compute)
+       13    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:348(reshape)
+       61    0.001    0.000    0.001    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:152(make)
+       21    0.000    0.000    0.001    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:794(reshape)
+      112    0.001    0.000    0.001    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:142(compact_strides)
+        1    0.000    0.000    0.001    0.001 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_transformer.py:95(forward)
+        1    0.000    0.000    0.001    0.001 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:647(flash_attention)
+        1    0.000    0.000    0.001    0.001 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:594(compute)
+        1    0.001    0.001    0.001    0.001 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:623(flash_attention)
+        8    0.000    0.000    0.001    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:199(reshape)
+        6    0.000    0.000    0.001    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:543(__matmul__)
+        4    0.000    0.000    0.001    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:694(layernorm)
+
+
+
+  ══ cProfile: TransformerLayer (use_flash_attn=False) ══
+         3936 function calls (3831 primitive calls) in 0.024 seconds
+
+   Ordered by: cumulative time
+   List reduced from 140 to 30 due to restriction <30>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.024    0.024 /home/kuris/work/Dlsys/hw4_extra/benchmark_transformer.py:755(<lambda>)
+     18/1    0.000    0.000    0.024    0.024 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_basic.py:73(__call__)
+        1    0.000    0.000    0.024    0.024 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_transformer.py:265(forward)
+       66    0.000    0.000    0.022    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:74(__call__)
+       66    0.000    0.000    0.022    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:230(make_from_op)
+   180/92    0.000    0.000    0.021    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:96(realize_cached_data)
+        1    0.000    0.000    0.015    0.015 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_transformer.py:200(forward)
+       13    0.011    0.001    0.014    0.001 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:451(ewise_or_scalar)
+        1    0.000    0.000    0.010    0.010 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_transformer.py:95(forward)
+        6    0.000    0.000    0.009    0.002 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_basic.py:96(forward)
+        7    0.000    0.000    0.008    0.001 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:468(__add__)
+        5    0.000    0.000    0.008    0.002 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:306(__add__)
+        2    0.000    0.000    0.007    0.004 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_transformer.py:53(matmul)
+        5    0.000    0.000    0.007    0.001 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:21(compute)
+        3    0.000    0.000    0.006    0.002 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:481(__mul__)
+        2    0.000    0.000    0.006    0.003 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:312(__mul__)
+        2    0.000    0.000    0.006    0.003 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:48(compute)
+       99    0.002    0.000    0.003    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:152(make)
+       78    0.000    0.000    0.003    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:233(compact)
+       27    0.000    0.000    0.003    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:188(compute)
+       19    0.000    0.000    0.003    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/autograd.py:348(reshape)
+      117    0.001    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:225(is_compact)
+       39    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:255(reshape)
+        6    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:288(matmul)
+        1    0.000    0.000    0.002    0.002 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_transformer.py:73(softmax)
+        6    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/ops/ops_mathematic.py:263(compute)
+      159    0.001    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:142(compact_strides)
+        4    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/nn/nn_basic.py:191(forward)
+       27    0.000    0.000    0.002    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:794(reshape)
+        6    0.000    0.000    0.001    0.000 /home/kuris/work/Dlsys/hw4_extra/python/needle/backend_ndarray/ndarray.py:543(__matmul__)
+
+
+
+
+  ── GPU Memory ──
+    peak allocated: 8.1 MB
+    peak reserved:  28.0 MB
+
+==============================================================================================================
+Done.
+==============================================================================================================

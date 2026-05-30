@@ -1,0 +1,55 @@
+Using needle backend
+==============================================================================================================
+needle Transformer vs PyTorch Transformer — Performance Benchmark
+  columns: orig (use_flash_attn=False) | flash (use_flash_attn=True) | torch
+==============================================================================================================
+==============================================================================================================
+0. LayerNorm  forward  (CUDA)
+==============================================================================================================
+  LN tiny        (N=4,D=256)  needle=  18.57 µs  torch=   8.60 µs  ratio=2.2x
+  LN small       (N=8,D=1024)  needle=  20.62 µs  torch=   8.68 µs  ratio=2.4x
+  LN medium      (N=16,D=1024)  needle=  19.98 µs  torch=   8.01 µs  ratio=2.5x
+  LN large       (N=32,D=2048)  needle=  21.54 µs  torch=   8.10 µs  ratio=2.7x
+
+  [correctness] fused layernorm vs torch:
+    max diff vs torch: 4.768372e-07  ✓ PASS
+==============================================================================================================
+1. MultiHeadAttention  forward  (CUDA)
+==============================================================================================================
+  MHA tiny                orig= 309.89 µs  flash=  46.03 µs  torch= 125.54 µs  flash_vs_orig=6.7x  orig_vs_torch=2.5x  flash_vs_torch=0.4x
+  MHA small               orig=  10.05 ms  flash= 571.65 µs  torch= 118.06 µs  flash_vs_orig=17.6x  orig_vs_torch=85.1x  flash_vs_torch=4.8x
+  MHA medium              orig= 110.95 ms  flash=   6.38 ms  torch= 846.43 µs  flash_vs_orig=17.4x  orig_vs_torch=131.1x  flash_vs_torch=7.5x
+  MHA large               orig=  31.55 ms  flash=   2.13 ms  torch= 226.42 µs  flash_vs_orig=14.8x  orig_vs_torch=139.3x  flash_vs_torch=9.4x
+
+  [correctness] Checking flash_attn output vs original (tiny config):
+    max absolute difference: 4.768372e-07  ✓ PASS
+
+==============================================================================================================
+2. TransformerLayer  forward  (CUDA)
+==============================================================================================================
+  TL tiny                 orig= 543.61 µs  flash= 310.36 µs  torch= 323.36 µs  flash_vs_orig=1.8x  orig_vs_torch=1.7x  flash_vs_torch=1.0x
+  TL small                orig=  20.24 ms  flash=  11.25 ms  torch= 247.91 µs  flash_vs_orig=1.8x  orig_vs_torch=81.7x  flash_vs_torch=45.4x
+  TL medium               orig= 288.88 ms  flash= 181.63 ms  torch=   2.09 ms  flash_vs_orig=1.6x  orig_vs_torch=138.1x  flash_vs_torch=86.9x
+  TL large                orig=  76.97 ms  flash=  47.03 ms  torch= 563.79 µs  flash_vs_orig=1.6x  orig_vs_torch=136.5x  flash_vs_torch=83.4x
+
+==============================================================================================================
+3. Transformer (full model)  forward  (CUDA)
+==============================================================================================================
+  TF tiny                 orig=   1.73 ms  flash= 797.28 µs  torch= 687.93 µs  flash_vs_orig=2.2x  orig_vs_torch=2.5x  flash_vs_torch=1.2x
+  TF small                orig=  61.10 ms  flash=  36.95 ms  torch= 743.14 µs  flash_vs_orig=1.7x  orig_vs_torch=82.2x  flash_vs_torch=49.7x
+  TF medium               orig=  1.1744 s  flash= 730.40 ms  torch=  11.51 ms  flash_vs_orig=1.6x  orig_vs_torch=102.1x  flash_vs_torch=63.5x
+  TF large                orig= 306.92 ms  flash= 191.69 ms  torch=   2.86 ms  flash_vs_orig=1.6x  orig_vs_torch=107.3x  flash_vs_torch=67.0x
+
+==============================================================================================================
+4. TransformerLayer scaling over seq_len  (CUDA)
+==============================================================================================================
+  seq_len=16              orig=   2.65 ms  flash=   1.67 ms  torch= 223.93 µs  flash_vs_orig=1.6x  orig_vs_torch=11.8x  flash_vs_torch=7.4x
+  seq_len=32              orig=   4.15 ms  flash=   3.06 ms  torch= 232.87 µs  flash_vs_orig=1.4x  orig_vs_torch=17.8x  flash_vs_torch=13.1x
+  seq_len=64              orig=  10.23 ms  flash=   6.18 ms  torch= 221.16 µs  flash_vs_orig=1.7x  orig_vs_torch=46.3x  flash_vs_torch=28.0x
+  seq_len=128             orig=  28.24 ms  flash=  11.73 ms  torch= 262.95 µs  flash_vs_orig=2.4x  orig_vs_torch=107.4x  flash_vs_torch=44.6x
+  seq_len=256             orig=  81.70 ms  flash=  24.04 ms  torch= 430.83 µs  flash_vs_orig=3.4x  orig_vs_torch=189.6x  flash_vs_torch=55.8x
+  seq_len=512             orig= 246.05 ms  flash=  59.75 ms  torch=   1.09 ms  flash_vs_orig=4.1x  orig_vs_torch=226.4x  flash_vs_torch=55.0x
+
+==============================================================================================================
+Done.
+==============================================================================================================
