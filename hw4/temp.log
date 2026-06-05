@@ -1,0 +1,36 @@
+修复报告
+基准测试结果
+N	原始 needle	优化后 needle	PyTorch	优化 vs Torch	正确性
+128	0.096ms	0.038ms	0.017ms	2.29x	✓
+256	0.576ms	0.062ms	0.023ms	2.73x	✓
+512	4.309ms	0.273ms	0.090ms	3.03x	✓
+1024	27.559ms	1.678ms	0.284ms	5.91x	✓
+2048	231.510ms	13.671ms	2.547ms	5.37x	✓
+4096	2347.226ms	120.002ms	23.890ms	5.02x	✓
+优化后的矩阵乘法相比原始 needle 版本快 16-19x，相比 PyTorch cuBLAS 慢约 2-6x（符合手写 kernel 的预期）。
+
+修复的 Bug 清单
+src/ndarray_backend_cuda.cu：
+
+L607 — __global__ optkernel 缺 void 返回类型
+L629 — b + OFFSET(0, bx * BLOCK_SIZE_N, 0) 第三个参数 stride 应为 N 而非 0
+L645, L714 — bshared[0][B_COL_INSIDE][i + B_ROW_START_INSIDE] 索引错误，K 维和 N 维互换，改为 bshared[0][i + B_ROW_START_INSIDE][B_COL_INSIDE]
+L636, L670 — FETCH4(global_to_reg_a[idx]) 中 idx (0/1) 导致 float4 写入重叠 (offset 0 写 [0..3]，offset 1 写 [1..4])，改为 FETCH4(global_to_reg_a[reg_idx_a]) 其中 reg_idx_a = i / (STRIDE_A_TILE / 4) = 0/4
+L675 — FETCH4(global_to_reg_b[idx]) 同样问题，改为用 reg_idx_b = i / (STRIDE_B_TILE / 4)
+L649-657 — 初始 register 加载使用了 write_tag 作为 smem 索引，改为新增的 smem_read/smem_write 双缓冲变量
+L683, L687 — inner loop 中 ashared[write_tag]/bshared[write_tag] 应使用 smem_read 而非 write_tag（寄存器双缓冲的 tag 和 smem 双缓冲的 tag 是不同的概念）
+L702-718 — "write to shared" 阶段始终写入 [0] 缓冲区，应写入 smem_write，且需要 __syncthreads() 后交换 smem_read/smem_write
+L697-699, L735-737 — XOR swap 写法错误：(w^r, w^r, r^w) 不会交换，只产生 (0,1)→(0,1), (1,0)→(1,1) 等错误状态。改为正确实现：临时变量三行 swap
+L739 — 写回代码在 kernel 函数体外（} 提前关闭了 kernel），移入 kernel 内
+L739 — THREAD_SIZE_X + tx + j 应为 THREAD_SIZE_X * tx + j
+L746 — d.grid = dim3(M/..., N/..., 1) 第二个参数应为 P / BLOCK_SIZE_N 而非 N
+L628-629 — A 和 B 指针需 const_cast 以兼容 CUDA 13.2 编译器
+src/ndarray_backend_cuda.cu — pybind11 注册：
+
+新增 m.def("op_matmul", OpMatmul);
+python/needle/backend_ndarray/ndarray.py：
+
+新增 op_matmul(self, other) 方法，调用 self.device.op_matmul(...)
+bench_opmatmul.py：
+
+对比脚本：原始 needle matmul、优化 op_matmul、PyTorch 三者

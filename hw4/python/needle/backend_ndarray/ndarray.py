@@ -592,6 +592,14 @@ class NDArray:
             )
             return out
 
+    def op_matmul(self, other: "NDArray") -> "NDArray":
+        m, n, p = self.shape[0], self.shape[1], other.shape[1]
+        out = NDArray.make((m, p), device=self.device)
+        self.device.op_matmul(
+            self.compact()._handle, other.compact()._handle, out._handle, m, n, p
+        )
+        return out
+
     ### Reductions, i.e., sum/max over all element or over given axis
     def reduce_view_out(self, axis: int | tuple[int, ...] | list[int] | None, keepdims: bool = False) -> tuple["NDArray", "NDArray"]:
         """ Return a view to the array set up for reduction functions and output array. """
