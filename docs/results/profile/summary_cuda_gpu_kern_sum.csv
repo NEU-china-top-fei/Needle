@@ -1,0 +1,9 @@
+Time (%),Total Time (ns),Instances,Avg (ns),Med (ns),Min (ns),Max (ns),StdDev (ns),Name
+63.9,7121412,10,712141.2,711501.5,706301,720413,4093.3,"needle::cuda::FlashAttnFwdKernel(const float *, const float *, const float *, float *, unsigned int, unsigned int, unsigned int, unsigned int, bool, float)"
+12.4,1382010,60,23033.5,16192.0,15680,57792,15560.0,"needle::cuda::CompactKernel(const float *, float *, unsigned long, needle::cuda::CudaVec, needle::cuda::CudaVec, unsigned long)"
+10.4,1161883,60,19364.7,11616.0,11424,39328,11375.1,"void needle::gemm::tensorcore_kernel<(bool)1>(const __half *, const __half *, float *, int, int)"
+4.9,548896,40,13722.4,13728.0,13632,13888,42.8,"needle::cuda::LayerNormFwdKernel(const float *, const float *, const float *, float *, unsigned int, float)"
+4.1,460159,120,3834.7,3360.0,2336,9119,1851.9,"needle::gemm::pack_half(const float *, __half *, int, int, int, int)"
+2.1,234399,60,3906.7,3104.0,3072,7968,1805.8,"needle::gemm::crop_output(const float *, float *, int, int, int)"
+1.5,164512,40,4112.8,2912.0,2848,7808,2145.8,"needle::cuda::EwiseAddKernel(const float *, const float *, float *, unsigned long)"
+0.7,74304,10,7430.4,7440.0,7392,7456,29.4,"void needle::cuda::ScalarOpKernel<needle::cuda::MAX>(const float *, float, float *, unsigned long, T1)"

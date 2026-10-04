@@ -1,3 +1,17 @@
-hw4/data/
-prof*
-
+# Local environments, backups, datasets and generated outputs.
+/build/
+/results/
+/dist/
+/.venv/
+/.local_archive/
+/data/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.so
+*.o
+*.egg-info/
+*.nsys-rep
+*.ncu-rep
+*.sqlite
+.DS_Store

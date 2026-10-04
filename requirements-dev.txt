@@ -1,0 +1,4 @@
+# Standalone project build/tests; course notebooks may need extra dependencies.
+numpy>=1.26,<3
+pybind11>=2.12,<4
+pytest>=8,<10
