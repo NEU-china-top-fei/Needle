@@ -40,6 +40,7 @@ class DataLoader:
             (default: ``1``).
         shuffle (bool, optional): set to ``True`` to have the data reshuffled
             at every epoch (default: ``False``).
+        device (BackendDevice, optional): device for the returned tensors.
      """
     dataset: Dataset
     batch_size: Optional[int]
@@ -49,11 +50,15 @@ class DataLoader:
         dataset: Dataset,
         batch_size: Optional[int] = 1,
         shuffle: bool = False,
+        device=None,
     ):
 
+        if batch_size is None or batch_size <= 0:
+            raise ValueError("batch_size must be positive")
         self.dataset = dataset
         self.shuffle = shuffle
         self.batch_size = batch_size
+        self.device = device
         if not self.shuffle:
             self.ordering = np.array_split(np.arange(len(dataset)), 
                                            range(batch_size, len(dataset), batch_size))
@@ -70,7 +75,11 @@ class DataLoader:
         ### BEGIN YOUR SOLUTION
         if self.cur>=len(self.ordering):
           raise StopIteration
-        batch=[Tensor(x)for x in self.dataset[self.ordering[self.cur]]]
+        batch = [Tensor(x, device=self.device, requires_grad=False)
+                 for x in self.dataset[self.ordering[self.cur]]]
         self.cur+=1
         return batch
         ### END YOUR SOLUTION
+
+    def __len__(self):
+        return (len(self.dataset) + self.batch_size - 1) // self.batch_size

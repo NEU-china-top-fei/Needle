@@ -40,12 +40,13 @@ TC 输入由 GPU 从 FP32 转为 FP16；乘加累积与输出为 FP32。共享�
 
 ## 当前限制
 
-- 主线是 Transformer **前向**优化。融合 Attention / LayerNorm backward 仍使用 NumPy，不能据此宣称高性能训练或端到端混合精度训练支持。
+- MNIST MLP 和字符 Transformer 支持 CPU / CUDA 上的 FP32 训练。Transformer 训练示例使用基础算子构建 Attention / LayerNorm 的计算图，高维 Linear 的反向传播会沿 batch 和 sequence 维汇总共享权重的梯度。
+- 融合 Attention / LayerNorm 的优化范围是 **前向**，其 backward 仍使用 NumPy；训练示例关闭这两个融合开关。前向加速比不代表训练加速比。
 - 当前融合注意力采用逐线程 Online Softmax，避免保存 N×N 概率矩阵；没有实现完整 FlashAttention 的分块协作计算。
 - 自动 TC 路径每次转换并分配临时缓冲。小矩阵可能变慢；尚未加入权重缓存、工作区复用或自动分派阈值。
 - FP16 的舍入和有限动态范围会影响结果；CPU 回退并不会模拟 FP16 量化。
 - 融合注意力在 CPU 无对应内核或训练态有非零 dropout 时使用原始路径；LayerNorm 在无融合内核的后端也回退。
-- 原课程的所有模型、训练和数据流程不等同于已被本项目 GPU 测试完整覆盖。归档用例与项目验收分开。
+- 测试覆盖 GEMM 数值与梯度、数据加载、MLP 收敛和 Transformer 因果性及参数更新；其余课程模型尚未完整验证。
 
 ## 来源
 

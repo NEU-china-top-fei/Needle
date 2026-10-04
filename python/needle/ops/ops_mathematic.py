@@ -259,7 +259,7 @@ def summation(a, axes=None):
 
 
 class MatMul(TensorOp):
-  #要考虑多维张量和广播机制
+    """Multiply (..., K) activations by a shared (K, N) weight matrix."""
     def compute(self, a, b):
         ### BEGIN YOUR SOLUTION
         a_shape = a.shape
@@ -274,15 +274,17 @@ class MatMul(TensorOp):
         return out
 
     def gradient(self, out_grad, node):
-        ### BEGIN YOUR SOLUTION
-        broad=0
-        a,b=node.inputs
-        a_shape,b_shape=a.shape,b.shape
-        a_len,b_len=len(a_shape),len(b_shape)
-        da=matmul(out_grad,transpose(b))
-        db=matmul(transpose(a),out_grad)
-        return summation(da,tuple(range(len(da.shape)-a_len))),summation(db,tuple(range(len(db.shape)-b_len)))
-        ### END YOUR SOLUTION
+        a, b = node.inputs
+        if len(a.shape) == 2:
+            return matmul(out_grad, transpose(b)), matmul(transpose(a), out_grad)
+        # The forward flattens batch/sequence axes. Use the same convention
+        # for the weight gradient, summing over all token positions at once.
+        rows = math.prod(a.shape[:-1])
+        a_flat = reshape(a, (rows, a.shape[-1]))
+        grad_flat = reshape(out_grad, (rows, b.shape[1]))
+        da = reshape(matmul(grad_flat, transpose(b)), a.shape)
+        db = matmul(transpose(a_flat), grad_flat)
+        return da, db
 
 
 def matmul(a, b):

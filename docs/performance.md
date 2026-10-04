@@ -1,7 +1,6 @@
 # RTX 4060 Laptop 实测报告
 
 设备：NVIDIA GeForce RTX 4060 Laptop GPU；CUDA runtime `13020`，cuBLAS `130401`；Python 3.12.3。
-源码 SHA-256：`874f561441bb9d5a0f3463eb4c638d87bb515804307ea7187ff0e552d3e5d11e`。原始 Git 基点 `9bd5e2821be28c189d4ded709e3207d1073678df`，运行时工作区有未提交改动。
 
 每组 3 次独立进程重复，表中为各轮统计量的中位数，范围为跨轮最小—最大值。GEMM 每轮预热 10 次、计时 50 次；Transformer 每轮预热 5 次、计时 30 次。未锁定 GPU 时钟/功耗，均为同一设备的顺序实验。
 
@@ -67,15 +66,3 @@ dropout=0，eval，FFN hidden=4D；每轮复用同一模型和输入。模型计
 - TC 预打包内核到框架调用之间有明显开销，转换/分配及输出整理值得继续分析。
 - Transformer 的主要额外收益来自注意力与 LayerNorm 融合；仅替换 GEMM 并不能获得最终模型加速比。
 - 在中大矩阵用例中，自写 TC 内核仍落后于同口径 cuBLAS；小矩阵的微秒级波动不能据此宣称稳定胜过库实现。
-
-## 原始记录
-
-- [gemm_0.json](results/rtx4060/gemm_0.json)
-- [gemm_1.json](results/rtx4060/gemm_1.json)
-- [gemm_2.json](results/rtx4060/gemm_2.json)
-- [transformer_medium_0.json](results/rtx4060/transformer_medium_0.json)
-- [transformer_medium_1.json](results/rtx4060/transformer_medium_1.json)
-- [transformer_medium_2.json](results/rtx4060/transformer_medium_2.json)
-- [transformer_small_0.json](results/rtx4060/transformer_small_0.json)
-- [transformer_small_1.json](results/rtx4060/transformer_small_1.json)
-- [transformer_small_2.json](results/rtx4060/transformer_small_2.json)

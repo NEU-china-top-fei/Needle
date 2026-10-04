@@ -82,6 +82,21 @@ def test_autograd(device, mode):
     np.testing.assert_allclose(w.grad.numpy(), a.T @ np.ones((17, 19)), rtol=1e-4, atol=1e-4)
 
 
+@pytest.mark.parametrize("shape", [(2, 3, 4), (2, 2, 3, 4)])
+def test_shared_weight_matmul_backward(device, shape):
+    rng = np.random.default_rng(17)
+    a = rng.normal(size=shape).astype(np.float32)
+    b = rng.normal(size=(4, 5)).astype(np.float32)
+    grad = rng.normal(size=(*shape[:-1], 5)).astype(np.float32)
+    x, w = ndl.Tensor(a, device=device), ndl.Tensor(b, device=device)
+    output = x @ w
+    (output * ndl.Tensor(grad, device=device, requires_grad=False)).sum().backward()
+    np.testing.assert_allclose(output.numpy(), a @ b, rtol=1e-4, atol=1e-5)
+    np.testing.assert_allclose(x.grad.numpy(), grad @ b.T, rtol=1e-4, atol=1e-5)
+    np.testing.assert_allclose(w.grad.numpy(), a.reshape(-1, 4).T @ grad.reshape(-1, 5),
+                               rtol=1e-4, atol=1e-5)
+
+
 @pytest.mark.parametrize("mode", MODES)
 def test_linear_uses_matmul_policy(device, mode):
     layer = ndl.nn.Linear(33, 19, bias=False, device=device)

@@ -4,7 +4,11 @@
 /dist/
 /.venv/
 /.local_archive/
+# Personal notes, course archives, and raw experiment records.
+/.local/
 /data/
+/docs/results/
+**/results/*.json
 __pycache__/
 .pytest_cache/
 *.py[cod]
@@ -14,4 +18,5 @@ __pycache__/
 *.nsys-rep
 *.ncu-rep
 *.sqlite
+*.npz
 .DS_Store

@@ -1,0 +1,53 @@
+the morning light falls across the quiet room.
+the student opens a book and begins to read.
+a small machine waits beside the window.
+each page tells a story about a different idea.
+the reader follows the words from left to right.
+outside the window the rain begins to fall.
+a bird rests on the branch of a tall tree.
+the city is waking slowly in the soft light.
+
+the machine learns from one example at a time.
+an input becomes a number and a number becomes a signal.
+the model makes a guess about the next letter.
+the loss measures the distance between a guess and an answer.
+a gradient carries information through the layers.
+small updates change the weights of the model.
+after many steps the guesses become more useful.
+the student watches the numbers and writes a careful note.
+
+the afternoon brings a new set of questions.
+a simple answer is not always the right answer.
+the reader returns to the beginning of the chapter.
+an old idea can explain a new observation.
+the machine repeats its work without a sound.
+the window reflects the changing color of the sky.
+the student takes a short walk through the garden.
+a path of smooth stones leads toward the gate.
+
+the evening light falls across the quiet room.
+the student closes a book and begins to write.
+a small machine works beside the window.
+each line records a question about a different idea.
+the writer follows the words from left to right.
+outside the window the rain has come to an end.
+a bird leaves the branch of a tall tree.
+the city is resting slowly in the fading light.
+
+the model reads a sequence of letters.
+each letter can attend to the letters that came before it.
+the future stays hidden behind a causal mask.
+the position of a letter helps explain its role.
+a shared set of weights transforms every position.
+the last layer predicts the next character in the text.
+the optimizer changes the weights after each batch.
+the same framework performs the forward and backward work.
+
+the next morning brings another chance to learn.
+the student checks the results before making a claim.
+a careful experiment keeps its questions small.
+the reader compares a new result with an earlier result.
+the machine continues its work beside the window.
+outside the window the sky is clear and bright.
+the garden path is dry beneath the tall tree.
+the city begins another day in the morning light.

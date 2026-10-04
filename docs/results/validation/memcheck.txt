@@ -1,4 +1,0 @@
-========= COMPUTE-SANITIZER
-.......................................................                  [100%]
-55 passed, 56 deselected in 0.80s
-========= ERROR SUMMARY: 0 errors

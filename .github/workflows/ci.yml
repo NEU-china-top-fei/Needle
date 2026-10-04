@@ -31,3 +31,7 @@ jobs:
         run: |
           python benchmarks/gemm.py --device cpu --modes baseline --shapes 17x33x19 --warmup 1 --iterations 2
           python benchmarks/transformer_ablation.py --device cpu --batch 1 --seq 4 --dim 16 --heads 2 --warmup 1 --iterations 2
+      - name: Train character Transformer
+        env:
+          PYTHONPATH: build/ci/python
+        run: python examples/train_transformer.py --device cpu --epochs 1 --generate 8
